@@ -215,15 +215,15 @@ def load_files(filenames, callback):
         ["%s expanded to %s" % (pattern, expanded if expanded else "empty") for pattern, expanded in glob_expanded.iteritems()])
     
     # Create default dict mapping iris format handler to its associated filenames
-    handler_map = collections.defaultdict(list)
+    recognised_filenames = collections.defaultdict(list)
     for fn in sum([x for x in glob_expanded.viewvalues()], []):
         with open(fn) as fh:         
-            handling_format_spec = iris.fileformats.FORMAT_AGENT.get_spec(os.path.basename(fn), fh)
-            handler_map[handling_format_spec].append(fn)
+            format_recogniser = iris.fileformats.recognise(os.path.basename(fn), fh)
+            recognised_filenames[format_recogniser].append(fn)
     
     # Call each iris format handler with the approriate filenames
-    for handling_format_spec, fnames in handler_map.iteritems():
-        for cube in handling_format_spec.handler(fnames, callback):
+    for format_recogniser, fnames in recognised_filenames.iteritems():
+        for cube in format_recogniser.loader(fnames, callback):
             yield cube
 
 

@@ -49,9 +49,9 @@ class TestDecodeUri(unittest.TestCase):
 
 
 @iris.tests.skip_data
-class TestFileFormatPicker(tests.IrisTest):
+class TestFileFormatRecogniser(tests.IrisTest):
     def test_known_formats(self):
-        a = str(iris.fileformats.FORMAT_AGENT)
+        a = "\n".join([" * %s" % r for r in iris.fileformats.recognisers])
         self.assertString(a, tests.get_result_path(('file_load', 'known_loaders.txt')))
 
 
@@ -66,7 +66,7 @@ class TestFileFormatPicker(tests.IrisTest):
                   ['GRIB', 'jpeg2000', 'file.grib2'], # GRIB2
                   ['PP', 'uk4', 'uk4par09.pp'], # PP
 #                  ['BUFR', 'mss', 'BUFR_Samples', 'JUPV78_EGRR_121200_00002501'], # BUFFR
-#                  ['NIMROD', 'uk2km', 'WO0000000003452', '201007021200_u1096_ng_ey08_visibility0360_screen_2km'], # nimrod 
+                  ['NIMROD', 'uk2km', 'WO0000000003452', '201007020900_u1096_ng_ey00_visibility0180_screen_2km'], # nimrod 
 #                  ['NAME', '20100509_18Z_variablesource_12Z_VAAC', 'Fields_grid1_201005110000.txt'], # NAME
               ]
         
@@ -74,8 +74,8 @@ class TestFileFormatPicker(tests.IrisTest):
         for spec in fspecs:
             relpath = os.path.join(*spec)
             actpath = tests.get_data_path(spec)
-            a = iris.fileformats.FORMAT_AGENT.get_spec(actpath, open(actpath, 'r'))
-            result.append('%s - %s' % (a.name, relpath))
+            recogniser = iris.fileformats.recognise(actpath, open(actpath, 'r'))
+            result.append('%s - %s' % (recogniser.title, relpath))
             
         self.assertString('\n'.join(result), tests.get_result_path(('file_load', 'format_associations.txt')))
 

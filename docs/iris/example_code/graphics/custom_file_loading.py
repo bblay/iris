@@ -4,40 +4,29 @@ Loading a cube from a custom file format
 
 This example shows how a custom text file can be loaded using the standard Iris load mechanism. 
 
-The first stage in the process is to define an Iris :class:`FormatSpecification <iris.io.format_picker.FormatSpecification>` for the file format.
-To create a format specification we need to define the following:
+The first stage in the process is to define an Iris :class:`FormatSpecification <iris.fileformats.Recogniser>` for the file format.
+To create a recogniser we need to define the following:
 
 * format_name - Some text that describes the format specification we are creating
-* file_element - FileElement instance of the element which identifies this FormatSpecification
-    Possible values are:
-    
-    ``iris.io.format_picker.MAGIC_NUMBER_32_BIT`` - The first 4 bytes from the file
-    
-    ``iris.io.format_picker.MAGIC_NUMBER_64_BIT`` - The first 8 bytes from the file
-    
-    ``iris.io.format_picker.FILE_EXTENSION`` - The files extension
-    
-    ``iris.io.format_picker.LEADING_LINE`` - The first line of the file
-
-* file_element_value - The value that the file_element should take if a file matches this FormatSpecification
-* handler (optional) - A generator function that will be called when the file specification has been identified. This function is
-  provided by the user and provides the means to parse the whole file. If no handler function is provided, then identification
-  is still possible without any handling.
+* recognition - A function that inspects the file and/or the filename.
+* loader (optional) - A generator function that can be called when the file format has been recognised.
+  This function is provided by the user and provides the means to parse the whole file.
+  If no handler function is provided, then recognition is still possible without loading.
   
-  The handler function must define the following arguments:
+  The loader function must define the following arguments:
   
   * list of filenames to process
   * callback function - An optional function to filter/alter the Iris cubes returned
   
-  The handler function must be defined as generator which yields each cube as they are produced.
+  The loader function must be defined as generator which yields each cube as they are produced.
   
 * priority (optional) - Integer giving a priority for considering this specification where higher priority means sooner consideration
 
 In the following example, the function :func:`load_NAME_III` has been defined to handle the loading of the raw data from the custom file format.
 This function is called from :func:`NAME_to_cube` which uses this data to create and yield Iris cubes.
 
-In the ``main()`` function the filenames are loaded via the ``iris.load_strict`` function which automatically
-invokes the ``FormatSpecification`` we defined. The cube returned from the load function is then used to produce a plot.
+In the ``main()`` function the files are loaded via ``iris.load_strict`` which automatically
+invokes the ``Recogniser`` we defined. The cube returned from the load function is then used to produce a plot.
 
 """
 import datetime
@@ -49,7 +38,6 @@ import iris
 import iris.coords as icoords
 import iris.coord_systems as icoord_systems
 import iris.fileformats
-import iris.io.format_picker as format_picker
 import iris.plot as iplt
 
 
@@ -196,14 +184,19 @@ def NAME_to_cube(filenames, callback):
             yield cube
 
 
-# Create a format_picker specification of the NAME file format giving it a priority below NetCDF, GRIB & PP etc.
-_NAME_III_spec = format_picker.FormatSpecification('Name III', format_picker.LEADING_LINE, 
-                                      lambda line: line.startswith("NAME III"), NAME_to_cube,
-                                      priority=3,)
+# Create a format_recogniser for the NAME file format giving it a priority below NetCDF, GRIB & PP etc.
+class NAME3Recogniser(iris.fileformats.Recogniser):
+    """Recognise NAME III files."""
+    def __init__(self):
+        self.title = 'NAME III'
+        self.priority = 3
+        self.loader = NAME_to_cube
+    
+    def examine(self, filename, file_handle, cache=None):
+        return file_handle.readline().startswith("NAME III")
 
 # Register the NAME loader with iris
-iris.fileformats.FORMAT_AGENT.add_spec(_NAME_III_spec)
-
+iris.fileformats.add_recogniser(NAME3Recogniser())
 
 
 # ---------------------------------------------
