@@ -31,10 +31,11 @@ import numpy
 import iris.proxy
 iris.proxy.apply_proxy('gribapi', globals())
 
+import grib_save_rules
 import iris.coords as coords
 import iris.coord_systems as coord_systems
+from iris.fileformats.recogniser import Recogniser
 import iris.unit
-import grib_save_rules
 
 
 # rules for converting a grib message to a cm cube
@@ -522,4 +523,12 @@ def save_grib2(cube, target, append=False, **kwargs):
         grib_file.close()
 
 
+class GribRecogniser(Recogniser):
+    """Recognise GRIB files."""
 
+    title = 'GRIB' 
+    priority = 5
+    loader = load_cubes
+    
+    def examine(self, filename, file_handle, cache):
+        return self.magic32(file_handle, cache) == 0x47524942

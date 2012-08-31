@@ -38,6 +38,7 @@ import iris.io
 import iris.unit
 import iris.fileformats.manager
 import iris.fileformats.um_cf_map
+from iris.fileformats.recogniser import Recogniser
 import iris.coord_systems
 import iris.proxy
 iris.proxy.apply_proxy('iris.fileformats.pp_packing', globals())
@@ -1640,3 +1641,31 @@ def save(cube, target, append=False, field_coords=None):
 
     if isinstance(target, basestring):
         pp_file.close()
+
+
+class PPRecogniser(Recogniser):
+    """Recognise PP files."""
+    
+    title = 'UM Post Processing file (PP)'
+    priority = 5
+    loader = load_cubes
+    
+    def examine(self, filename, file_handle, cache):
+        return self.magic32(file_handle, cache) == 0x00000100
+
+
+class PPLittleEndianRecogniser(Recogniser):
+    """Recognise little endian PP files."""
+
+    @classmethod
+    def fail(cls, filename, *args, **kwargs):
+        """A fake loader that raises an exception."""
+        raise ValueError('PP file %r contains little-endian data, please convert to big-endian with command line utility "bigend".' % filename)
+
+    title = 'UM Post Processing file (PP) little-endian'
+    priority = 5
+    loader = fail
+    
+    def examine(self, filename, file_handle, cache):
+        return self.magic32(file_handle, cache) == 0x00010000
+

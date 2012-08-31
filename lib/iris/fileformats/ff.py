@@ -26,6 +26,7 @@ import numpy as np
 
 import iris.config
 import iris.fileformats.manager
+from iris.fileformats.recogniser import Recogniser
 import pp
 
 
@@ -305,3 +306,25 @@ def load_cubes(filenames, callback):
          
     """
     return pp._load_cubes_variable_loader(filenames, callback, FF2PP)
+
+
+class FF3p1Recogniser(Recogniser):
+    """Recognise UM Fields files (pre v3.1)."""
+
+    title = 'UM Fields file (FF) pre v3.1'
+    priority = 4
+    loader = load_cubes
+    
+    def examine(self, filename, file_handle, cache):
+        return self.magic64(file_handle, cache) == 0x0000000000000014
+
+
+class FF5p2Recogniser(Recogniser):
+    """Recognise UM Fields files (post v5.2)."""
+
+    title = 'UM Fields file (FF) post v5.2'
+    priority = 4
+    loader = load_cubes
+    
+    def examine(self, filename, file_handle, cache):
+        return self.magic64(file_handle, cache) == 0x000000000000000F

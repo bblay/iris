@@ -42,6 +42,7 @@ import iris.exceptions
 import iris.fileformats.cf
 import iris.fileformats.manager
 import iris.fileformats._pyke_rules
+from iris.fileformats.recogniser import Recogniser
 import iris.io
 import iris.unit
 import iris.util
@@ -720,3 +721,40 @@ def save(cube, filename, netcdf_format='NETCDF4'):
     # Flush any buffered data to the CF-netCDF file before closing.
     dataset.sync()
     dataset.close()
+
+
+class NetCDFRecogniser(Recogniser):
+    """Recognise NetCDF files."""
+    def __init__(self):
+        self.title = 'NetCDF' 
+        self.priority = 5
+        self.loader = load_cubes
+    
+    def examine(self, filename, file_handle, cache):
+        return self.magic32(file_handle, cache) == 0x43444601
+
+
+class NetCDF64OffRecogniser(Recogniser):
+    """Recognise NetCDF 64-bit offset files."""
+    def __init__(self):
+        self.title = 'NetCDF 64 bit offset format'
+        self.priority = 5
+        self.loader = load_cubes
+    
+    def examine(self, filename, file_handle, cache):
+        return self.magic32(file_handle, cache) == 0x43444602
+
+
+class NetCDF4Recogniser(Recogniser):
+    """Recognise NetCDF 4 files.
+    
+    NOTE: this covers both v4 and v4 "classic model", the signature is the same
+    
+    """
+
+    title = 'NetCDF_v4'
+    priority = 5
+    loader = load_cubes
+    
+    def examine(self, filename, file_handle, cache):
+        return self.magic64(file_handle, cache) == 0x894844460d0a1a0a
