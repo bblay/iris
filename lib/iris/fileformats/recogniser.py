@@ -37,6 +37,23 @@ class Recogniser(object):
         
         """
         pass
+    
+    def load(self, filenames, callback):
+        """Call the loader associated with this format.
+        
+        Args:
+        
+        * filenames - list of pp filenames to load
+        
+        Kwargs:
+        
+        * callback - a function which can be passed on to :func:`iris.io.run_callback`
+        
+        """
+        
+        # We can't call it directly because it get's a 'self' arg,
+        # so call it through this method.
+        return self.loader(filenames, callback)
 
     def __str__(self):
         return "%s (priority %s)" % (self.title, self.priority)
