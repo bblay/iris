@@ -187,13 +187,14 @@ def NAME_to_cube(filenames, callback):
 # Create a format_recogniser for the NAME file format giving it a priority below NetCDF, GRIB & PP etc.
 class NAME3Recogniser(iris.fileformats.Recogniser):
     """Recognise NAME III files."""
-    def __init__(self):
-        self.title = 'NAME III'
-        self.priority = 3
-        self.loader = NAME_to_cube
+
+    title = 'NAME III'
+    priority = 3
+    loader = NAME_to_cube
     
     def examine(self, filename, file_handle, cache=None):
         return file_handle.readline().startswith("NAME III")
+
 
 # Register the NAME loader with iris
 iris.fileformats.add_recogniser(NAME3Recogniser())
