@@ -1,0 +1,39 @@
+<?xml version="1.0" ?>
+<cubes xmlns="urn:x-iris:cubeml-0.2">
+  <cube long_name="orography" units="m">
+    <attributes>
+      <attribute name="field_code" value="73"/>
+      <attribute name="nimrod_version" value="2"/>
+      <attribute name="num_model_levels" value="1"/>
+      <attribute name="source" value="umqg"/>
+    </attributes>
+    <coords>
+      <coord>
+        <DimCoord id="641851dc8003dd28" points="[9999.0]" shape="(1,)" standard_name="altitude" units="Unit('m')" value_type="float32"/>
+      </coord>
+      <coord>
+        <DimCoord id="5634c91ba5717382" long_name="experiment_number" points="[0]" shape="(1,)" units="Unit('1')" value_type="int16"/>
+      </coord>
+      <coord>
+        <DimCoord id="49db77bb88e9d046" points="[375288.0]" shape="(1,)" standard_name="forecast_reference_time" units="Unit('hours')" value_type="float64"/>
+      </coord>
+      <coord datadims="[0]">
+        <DimCoord id="31a3be9e9cebe09a" long_name="latitude" points="[32.0166660938, 32.0333327614, 32.0499994289,
+		..., 42.9666666649, 42.9833333325, 43.0]" shape="(660,)" units="Unit('degrees')" value_type="float64">
+          <geogCS earth_radius="6367470.0"/>
+        </DimCoord>
+      </coord>
+      <coord datadims="[1]">
+        <DimCoord id="31a3be9e9cebe09a" long_name="longitude" points="[124.0, 124.016666668, 124.033333335, ...,
+		131.950000415, 131.966667082, 131.98333375]" shape="(480,)" units="Unit('degrees')" value_type="float64">
+          <geogCS earth_radius="6367470.0"/>
+        </DimCoord>
+      </coord>
+      <coord>
+        <DimCoord id="7655d345fead4375" points="[375288.0]" shape="(1,)" standard_name="time" units="Unit('hours')" value_type="float64"/>
+      </coord>
+    </coords>
+    <cellMethods/>
+    <data checksum="0x4f48c140" dtype="int16" shape="(660, 480)"/>
+  </cube>
+</cubes>

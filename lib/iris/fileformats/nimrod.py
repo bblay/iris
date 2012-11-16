@@ -251,8 +251,8 @@ class NimrodField(object):
         if self.tm_meridian_scaling != MISSING_INT:
             raise TranslationError("tm_meridian_scaling not yet handled")
         
+        # "NG" (British National Grid).
         if self.horizontal_grid_type == 0:
-            # "NG", means osgb grid.
             osgb_cs = iris.coord_systems.OSGB()
             cube.add_dim_coord(
                 DimCoord(numpy.arange(self.num_cols) * self.column_step + self.x_origin,
@@ -261,6 +261,21 @@ class NimrodField(object):
                 cube.add_dim_coord(
                     DimCoord(numpy.arange(self.num_rows)[::-1] * -self.row_step + self.y_origin,
                              long_name="y", units="m", coord_system=osgb_cs), 0)
+            else:
+                raise TranslationError("Corner {0} not yet implemented".format(self.origin_corner))
+            
+        # Latlon
+        elif self.horizontal_grid_type == 1:
+            # latlon
+            from iris.analysis.cartography import DEFAULT_SPHERICAL_EARTH_RADIUS
+            ll_cs = iris.coord_systems.GeogCS(DEFAULT_SPHERICAL_EARTH_RADIUS)
+            cube.add_dim_coord(
+                DimCoord(numpy.arange(self.num_cols) * self.column_step + self.x_origin,
+                         standard_name="longitude", units="degrees", coord_system=ll_cs), 1)
+            if self.origin_corner == 0:  # top left
+                cube.add_dim_coord(
+                    DimCoord(numpy.arange(self.num_rows)[::-1] * -self.row_step + self.y_origin,
+                             standard_name="latitude", units="degrees", coord_system=ll_cs), 0)
             else:
                 raise TranslationError("Corner {0} not yet implemented".format(self.origin_corner))
         else:
@@ -274,6 +289,13 @@ class NimrodField(object):
                    self.reference_vertical_coord == MISSING_FLOAT:
                     cube.add_aux_coord(DimCoord(self.vertical_coord,
                                         standard_name="height", units="m"))
+                else:
+                    raise TranslationError("Bounded vertical not yet implemented")
+            elif self.vertical_coord_type == 1:
+                if (self.reference_vertical_coord_type == MISSING_INT or
+                    self.reference_vertical_coord == MISSING_FLOAT):
+                    cube.add_aux_coord(DimCoord(self.vertical_coord,
+                                        standard_name="altitude", units="m"))
                 else:
                     raise TranslationError("Bounded vertical not yet implemented")
             else:

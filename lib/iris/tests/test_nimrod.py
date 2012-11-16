@@ -21,22 +21,32 @@ import iris.tests as tests
 
 import matplotlib.pyplot as plt
 import numpy as np
+import cartopy.crs as ccrs
 
 import iris
 import iris.plot as iplt
+import iris.quickplot as qplt
 
 
 @iris.tests.skip_data
-class TestGribLoad(tests.GraphicsTest):
+class TestLoad(tests.GraphicsTest):
     
-    def test_load(self):
-        cube = iris.load(tests.get_data_path(('NIMROD', 'uk2km', 'WO0000000003452',
-                        '201007020900_u1096_ng_ey00_visibility0180_screen_2km')))[0]
-        self.assertCML(cube, ("nimrod", "load.cml"))
+#    def test_load(self):
+#        cube = iris.load(tests.get_data_path(('NIMROD', 'uk2km', 'WO0000000003452',
+#                        '201007020900_u1096_ng_ey00_visibility0180_screen_2km')))[0]
+#        self.assertCML(cube, ("nimrod", "load.cml"))
+#        
+#        c = plt.contourf(cube.data, levels=np.linspace(-25000, 6000, 10))
+#        self.check_graphic()
         
-        c = plt.contourf(cube.data, levels=np.linspace(-25000, 6000, 10))
+    def test_korean(self):
+#        cubes = iris.load(tests.get_data_path(('NIMROD', 'Korea', '201210240000_k0880_ll_umqg_height0000_orography_2km')))
+        cube = iris.load_cube('/data/local/dataZoo/NIMROD/Korea/201210240000_k0880_ll_umqg_height0000_orography_2km')
+        self.assertCML(cube, ("nimrod", "korean.cml"))
+        
+        qplt.contourf(cube)
+        plt.gcs().coastlines()
         self.check_graphic()
-        
 
 if __name__ == "__main__":
     tests.main()
