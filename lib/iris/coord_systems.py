@@ -407,3 +407,86 @@ class OSGB(TransverseMercator):
 
     def as_cartopy_projection(self):
         return cartopy.crs.OSGB()
+
+
+class PolarStereographic(CoordSystem):
+    """
+    A polar stereographic map projection for the north pole.
+
+    """
+
+    grid_mapping_name = "polar_stereographic" 
+
+    def __init__(self, pole_lat, y_axis_lon, false_easting, false_northing,
+                 true_scale_lat=None, ellipsoid=None):
+        """
+        Constructs a PolarStereographic coord system.
+        
+        Args:
+        
+            * pole_lat
+                    Latitude of pole (latitude_of_projection_origin). 
+                    Either +90 or -90.
+
+            * y_axis_lon     
+                    The longitude which aligns with the y axis.
+
+            * false_easting                     
+                    X offset from planar origin in metres.
+
+            * false_northing                    
+                    Y offset from planar origin in metres.
+
+        Kwargs:
+
+            * true_scale_lat
+                    Latitude of true scale.
+
+            * ellipsoid
+                    Optional :class:`GeogCS` defining the ellipsoid.
+
+        """
+        
+        if false_easting or false_northing:
+            raise warning("PolarStereographic currently ignores "
+                          "false eastine/northing.")
+            
+        self.pole_lat = float(pole_lat)
+        """True latitude of planar origin in degrees."""
+
+        self.y_axis_lon = float(y_axis_lon)
+        """True longitude of planar origin in degrees."""
+
+        self.false_easting = float(false_easting)  
+        """X offset from planar origin in metres."""
+
+        self.false_northing = float(false_northing)  
+        """Y offset from planar origin in metres."""
+
+        self.true_scale_lat = float(true_scale_lat) if true_scale_lat else None
+        """Latitude of true scale."""
+
+        self.ellipsoid = ellipsoid
+        """Ellipsoid definition."""
+
+    def __repr__(self):
+        return "PolarStereographic(pole_lat={!r}, "\
+               "y_axis_lon={!r}, false_easting={!r}, "\
+               "false_northing={!r}, true_scale_lat={!r}, "\
+               "ellipsoid={!r})".format(self.pole_lat,
+                                        self.y_axis_lon,
+                                        self.false_easting, self.false_northing,
+                                        self.true_scale_lat,
+                                        self.ellipsoid)
+
+    def as_cartopy_crs(self):
+        warnings.warn("Cartopy currently under-defines Stereographic.")
+        return cartopy.crs.Stereographic(self.pole_lat, self.y_axis_lon,
+                                         self.true_scale_lat)
+
+    def as_cartopy_projection(self):
+        warnings.warn("Cartopy currently under-defines Stereographic.")
+        return cartopy.crs.Stereographic(self.pole_lat, self.y_axis_lon,
+                                         self.true_scale_lat)
+        # TODO: Add these to cartopy : false_easting, false_northing,
+        # also, use the ellipsoid?
