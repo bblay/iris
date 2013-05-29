@@ -490,3 +490,92 @@ class PolarStereographic(CoordSystem):
                                          self.true_scale_lat)
         # TODO: Add these to cartopy : false_easting, false_northing,
         # also, use the ellipsoid?
+
+
+class LambertConformal(CoordSystem):
+    """
+    A coordinate system in the Lambert Conformal conic projection.
+
+    """
+
+    grid_mapping_name = "polar_stereographic" 
+
+    def __init__(self, central_lat, central_lon,
+                 false_easting=0.0, false_northing=0.0,
+                 secant_lat_1=None, secant_lat_2=None,
+                 ellipsoid=None):
+        """
+        Constructs a LambertConformal coord system.
+        
+        Args:
+        
+            * central_lat
+                    The latitude of "unitary scale".
+
+            * central_lon     
+                    The central longitude.
+
+            * false_easting
+                    X offset from planar origin in metres. Defaults to 0.
+
+            * false_northing
+                    Y offset from planar origin in metres. Defaults to 0.
+
+        Kwargs:
+
+            * secant_lat_1
+                    Latitude of first secant intersection.
+
+            * secant_lat_2
+                    Latitude of second secant intersection.
+
+            * ellipsoid
+                    :class:`GeogCS` defining the ellipsoid.
+
+        """
+        
+        self.central_lat = float(central_lat)
+        """True latitude of planar origin in degrees."""
+
+        self.central_lon = float(central_lon)
+        """True longitude of planar origin in degrees."""
+
+        self.false_easting = float(false_easting)  
+        """X offset from planar origin in metres."""
+
+        self.false_northing = float(false_northing)  
+        """Y offset from planar origin in metres."""
+
+        self.secant_lat_1 = float(secant_lat_1) if secant_lat_1 else None
+        """Latitude of first secant intersection."""
+
+        self.secant_lat_2 = float(secant_lat_2) if secant_lat_2 else None
+        """Latitude of second secant intersection."""
+
+        self.ellipsoid = ellipsoid
+        """Ellipsoid definition."""
+
+    def __repr__(self):
+        return "PolarStereographic(central_lat={!r}, central_lon={!r}, "\
+               "false_easting={!r}, false_northing={!r}, "\
+               "secant_lat_1={!r}, secant_lat_2={!r}, "\
+               "ellipsoid={!r})".format(self.central_lat, self.central_lon,
+                                        self.false_easting, self.false_northing,
+                                        self.secant_lat_1, self.secant_lat_2,
+                                        self.ellipsoid)
+
+    def as_cartopy_crs(self):
+        return cartopy.crs.LambertConformal(
+                                        self.central_lat, self.central_lon,
+                                        self.false_easting, self.false_northing,
+                                        self.secant_lat_1, self.secant_lat_2,
+                                        self.ellipsoid.semi_major_axis,
+                                        self.ellipsoid.semi_minor_axis)
+
+    def as_cartopy_projection(self):
+        return cartopy.crs.LambertConformal(
+                                        self.central_lat, self.central_lon,
+                                        self.false_easting, self.false_northing,
+                                        self.secant_lat_1, self.secant_lat_2,
+                                        self.ellipsoid.semi_major_axis,
+                                        self.ellipsoid.semi_minor_axis)

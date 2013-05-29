@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<cubes xmlns="urn:x-iris:cubeml-0.2">
+  <cube standard_name="air_temperature" units="K">
+    <coords>
+      <coord>
+        <dimCoord id="73141289" points="[2]" shape="(1,)" standard_name="forecast_period" units="Unit('hours')" value_type="int32"/>
+      </coord>
+      <coord>
+        <auxCoord id="64f42873" long_name="originating_centre" points="[	US National Weather Service, National Centres for Environmental Prediction]" shape="(1,)" units="Unit('no_unit')" value_type="string"/>
+      </coord>
+      <coord datadims="[1]">
+        <dimCoord id="76b83234" points="[-2.39702e+06, -2.39302e+06, -2.38902e+06, ...,
+		2.38698e+06, 2.39098e+06, 2.39498e+06]" shape="(1199,)" standard_name="projection_x_coordinate" units="Unit('unknown')" value_type="float32">
+          <lambertConformal central_lat="60.0" central_lon="262.0" ellipsoid="GeogCS(6371229.0)" false_easting="0.0" false_northing="0.0" secant_lat_1="60.0" secant_lat_2="30.0"/>
+        </dimCoord>
+      </coord>
+      <coord datadims="[0]">
+        <dimCoord id="24857af0" points="[-3.86031e+06, -3.85631e+06, -3.85231e+06, ...,
+		-676305.0, -672305.0, -668305.0]" shape="(799,)" standard_name="projection_y_coordinate" units="Unit('unknown')" value_type="float32">
+          <lambertConformal central_lat="60.0" central_lon="262.0" ellipsoid="GeogCS(6371229.0)" false_easting="0.0" false_northing="0.0" secant_lat_1="60.0" secant_lat_2="30.0"/>
+        </dimCoord>
+      </coord>
+      <coord>
+        <dimCoord id="6a1b3c16" points="[379982.0]" shape="(1,)" standard_name="time" units="Unit('hours since 1970-01-01 00:00:00', calendar='gregorian')" value_type="float64"/>
+      </coord>
+    </coords>
+    <cellMethods/>
+    <data byteorder="little" checksum="0x33ae3d3d" dtype="float64" order="C" shape="(799, 1199)"/>
+  </cube>
+</cubes>
