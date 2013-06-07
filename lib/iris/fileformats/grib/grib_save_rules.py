@@ -94,33 +94,6 @@ def grid_dims(x_coord, y_coord, grib):
     gribapi.grib_set_long(grib, "Nj", y_coord.shape[0])
 
 
-def latlon_first_last(x_coord, y_coord, grib):
-    
-    if x_coord.has_bounds() or y_coord.has_bounds():
-        warnings.warn("Ignoring xy bounds")
-
-# XXX Pending #1125
-#    gribapi.grib_set_double(grib, "latitudeOfFirstGridPointInDegrees", float(y_coord.points[0]))
-#    gribapi.grib_set_double(grib, "latitudeOfLastGridPointInDegrees", float(y_coord.points[-1]))
-#    gribapi.grib_set_double(grib, "longitudeOfFirstGridPointInDegrees", float(x_coord.points[0]))
-#    gribapi.grib_set_double(grib, "longitudeOfLastGridPointInDegrees", float(x_coord.points[-1]))
-# WORKAROUND
-    gribapi.grib_set_long(grib, "latitudeOfFirstGridPoint", int(y_coord.points[0]*1000000))
-    gribapi.grib_set_long(grib, "latitudeOfLastGridPoint", int(y_coord.points[-1]*1000000))
-    gribapi.grib_set_long(grib, "longitudeOfFirstGridPoint", int((x_coord.points[0]%360)*1000000))
-    gribapi.grib_set_long(grib, "longitudeOfLastGridPoint", int((x_coord.points[-1]%360)*1000000))
-
-
-def dx_dy(x_coord, y_coord, grib):
-
-    x_step = regular_step(x_coord) 
-    y_step = regular_step(y_coord) 
-
-    # TODO: THIS USED BE "Dx" and "Dy"!!! DID THE API CHANGE AGAIN???
-    gribapi.grib_set_double(grib, "DxInDegrees", float(abs(x_step)))
-    gribapi.grib_set_double(grib, "DyInDegrees", float(abs(y_step)))
-
-    
 def scanning_mode_flags(x_coord, y_coord, grib):
     
     gribapi.grib_set_long(grib, "iScansPositively", int(x_coord.points[1] - x_coord.points[0] > 0))
@@ -128,15 +101,45 @@ def scanning_mode_flags(x_coord, y_coord, grib):
 
 
 def latlon_common(cube, grib):
+
+    y_coord = cube.coord(dimensions=[0])
+    x_coord = cube.coord(dimensions=[1])
+
+    shape_of_the_earth(cube, grib)
+    grid_dims(x_coord, y_coord, grib)
+    scanning_mode_flags(x_coord, y_coord, grib)
+
+
+def regular_latlon_common(cube, grib):
+
+    y_coord = cube.coord(dimensions=[0])
+    x_coord = cube.coord(dimensions=[1])
+    if x_coord.has_bounds() or y_coord.has_bounds():
+        warnings.warn("Ignoring xy bounds")
+    
+    latlon_common(cube, grib)
+
+    gribapi.grib_set_double(grib, "latitudeOfFirstGridPointInDegrees", float(y_coord.points[0]))
+    gribapi.grib_set_double(grib, "latitudeOfLastGridPointInDegrees", float(y_coord.points[-1]))
+    gribapi.grib_set_double(grib, "longitudeOfFirstGridPointInDegrees", float(x_coord.points[0]))
+    gribapi.grib_set_double(grib, "longitudeOfLastGridPointInDegrees", float(x_coord.points[-1]))
+    
+    x_step = regular_step(x_coord) 
+    y_step = regular_step(y_coord) 
+    gribapi.grib_set_double(grib, "DxInDegrees", float(abs(x_step)))
+    gribapi.grib_set_double(grib, "DyInDegrees", float(abs(y_step)))
+
+
+def varres_latlon_common(cube, grib):
     
     y_coord = cube.coord(dimensions=[0])
     x_coord = cube.coord(dimensions=[1])
     
-    shape_of_the_earth(cube, grib)
-    grid_dims(x_coord, y_coord, grib)
-    latlon_first_last(x_coord, y_coord, grib)
-    dx_dy(x_coord, y_coord, grib)
-    scanning_mode_flags(x_coord, y_coord, grib)
+    latlon_common(cube, grib)
+    gribapi.grib_set_double_array(grib, "latitudes",
+                                  y_coord.points * 1000000.0)
+    gribapi.grib_set_double_array(grib, "longitudes",
+                                  x_coord.points * 1000000.0)
 
 
 def rotated_pole(cube, grib):
@@ -155,23 +158,48 @@ def rotated_pole(cube, grib):
 
 def grid_template(cube, grib):
 
+    # monotonic x and y coords?
+    x_coord = cube.coord(axis="X")
+    y_coord = cube.coord(axis="Y")
+    if x_coord.ndim != 1 or y_coord.ndim != 1:
+        raise iris.exceptions.CoordinateMultiDimError(
+            "GRIB export required 1D X and Y coords")
+    xy_monotonic = x_coord.is_monotonic() and y_coord.is_monotonic()
+
+    ok = False
     cs = cube.coord(dimensions=[0]).coord_system
-        
-    if isinstance(cs, iris.coord_systems.GeogCS):
-        
-        # template 3.0
-        gribapi.grib_set_long(grib, "gridDefinitionTemplateNumber", 0)
-        latlon_common(cube, grib)            
+    
+    # regular grid?
+    if xy_monotonic:
+        # template 3.0 : regular latlon
+        if isinstance(cs, iris.coord_systems.GeogCS):
+            gribapi.grib_set_long(grib, "gridDefinitionTemplateNumber", 0)
+            regular_latlon_common(cube, grib)
+            ok = True            
+    
+        # template 3.1 : rotated regular latlon
+        elif isinstance(cs, iris.coord_systems.RotatedGeogCS):
+            gribapi.grib_set_long(grib, "gridDefinitionTemplateNumber", 1)
+            regular_latlon_common(cube, grib)
+            rotated_pole(cube, grib)
+            ok = True            
 
-    # rotated
-    elif isinstance(cs, iris.coord_systems.RotatedGeogCS):
-
-        # template 3.1
-        gribapi.grib_set_long(grib, "gridDefinitionTemplateNumber", 1)
-        latlon_common(cube, grib)
-        rotated_pole(cube, grib)
-        
+    # variable resolution grid?
     else:
+        # template 3.4 : variable-resolution latlon
+        if isinstance(cs, iris.coord_systems.GeogCS):
+            gribapi.grib_set_long(grib, "gridDefinitionTemplateNumber", 4)
+            varres_latlon_common(cube, grib)            
+            ok = True            
+    
+        # template 3.5 : rotated variable-resolution latlon
+        elif isinstance(cs, iris.coord_systems.RotatedGeogCS):
+            gribapi.grib_set_long(grib, "gridDefinitionTemplateNumber", 5)
+            varres_latlon_common(cube, grib)
+            rotated_pole(cube, grib)
+            ok = True            
+        
+    if not ok:
         raise ValueError("Currently unhandled CoordSystem: %s" % cs)
 
 
