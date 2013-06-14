@@ -208,6 +208,12 @@ if __name__ == "__main__":
     dzu = dzu[:2]
     dzv = dzv[:2]
     
+#     import cPickle
+#     with open("t.pickle", "wb") as outfile:
+#         cPickle.dump(t, outfile, cPickle.HIGHEST_PROTOCOL)
+
+#     iris.save(t, "t.nc")
+#     t = iris.load_cube("t.nc")
 
     # Lump it all together.
     input_cubes = {"t": t, "u": u, "v": v, "region_mask": region_mask,
@@ -298,6 +304,6 @@ if __name__ == "__main__":
 #         print "net_transport"
 #         nt = net_transport(input_cubes, path)
 
-    plt.show()
+#     plt.show()
     print "finished"
 
