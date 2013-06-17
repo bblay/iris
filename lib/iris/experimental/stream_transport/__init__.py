@@ -304,6 +304,6 @@ if __name__ == "__main__":
 #         print "net_transport"
 #         nt = net_transport(input_cubes, path)
 
-#     plt.show()
+    plt.show()
     print "finished"
 

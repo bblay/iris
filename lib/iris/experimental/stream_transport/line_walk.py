@@ -12,7 +12,7 @@ def _min_max_edge(lon_tr_bounds, lat_tr_bounds):
     return dist.min(), dist.max()
 
 
-def _nearest_point(kdtree, point, shape, segs):
+def _nearest_to_point(kdtree, point, shape, segs):
     # Find the nearest point to the given point.
     # Handles co-located points.
 
@@ -57,6 +57,30 @@ def _nearest_point(kdtree, point, shape, segs):
     return near_ij, near_dist
 
 
+def _nearest_to_line(walk_point, shape, segs, lats, lons):
+     
+    dir = walk_point - segs[-1][-1]
+    perp = np.array(dir[1], -dir[0])
+    uperp = perp / np.sqrt(np.sum(perp*perp))
+    
+    to_check = []
+    last_ij = segs[-1][-1]
+    for y in range(max(0, last_ij[0]-1), min(shape[0], last_ij[0]+1)):
+        for x in range(max(0, last_ij[1]-1), min(shape[1], last_ij[1]+1)):
+            if x == y == 0:
+                continue
+            to_check.append((y, x))
+            
+    dists = [None] * len(to_check)
+    for i, p in enumerate(to_check):
+        ll = np.array((lats[p], lons[p]))
+        dists[i] = abs(np.dot(uperp, ll - walk_point))
+    dists = np.array(dists)
+    
+    near = np.where(dists == dists.min())[0][0]
+    return np.array(to_check[near])
+
+
 def add_point(segs, new_ij):
     if len(segs[-1]) > 0 and np.all(new_ij == segs[-1][-1]):
         raise ValueError("not adding duplicate" + str(new_ij))
@@ -65,29 +89,6 @@ def add_point(segs, new_ij):
     segs[-1] = remove_spike(segs[-1])
     sanity_check_last_points(segs)
 
-
-def go_near(segs, target_ij):
-    # Add points until we're within 1 cell from target.
-    # Assumes one dimension is already within 1 cell away.
-    # Expect to end up on an opposite corner to the target.
-    ijdiff = target_ij - segs[-1][-1]
-    assert(np.any(np.abs(ijdiff) <=1))
-    
-    # If we're not already near...
-    if np.any(np.abs(ijdiff) > 1):
-        walk_back_dim = np.where(np.abs(ijdiff) > 1)[0]
-        dir = 1 if ijdiff[walk_back_dim] > 0 else -1
-        num_walkback_steps = abs(ijdiff[walk_back_dim]) - 1
-        walkback_ij_start = segs[-1][-1].copy()
-        for walkback_step in range(num_walkback_steps):
-            walkback_ij = walkback_ij_start.copy()
-            walkback_ij[walk_back_dim] += dir * (walkback_step+1)
-            add_point(segs, walkback_ij)
-        
-    # Check we're within 1 away
-    ijdiff = target_ij - segs[-1][-1]
-    assert(np.all(np.abs(ijdiff) <= 1))
-   
 
 def _nearest_corner(point, prev_ij, curr_ij, lon_tr_bounds, lat_tr_bounds):
     ij1 = (prev_ij[0], curr_ij[1])
@@ -116,6 +117,7 @@ def remove_spike(path):
     # Remove the end of the path if it goes back on itself.
     if len(path) >= 3:
         if np.array_equal(path[-1], path[-3]):
+            print "removing spike"
             path = path[:-2]
     return path
 
@@ -128,39 +130,38 @@ def sanity_check_last_points(segs):
             seg = segs[-1]
             raise Exception(str(seg[-(min(10,len(seg))):]))
 
+def sanity_check_all_points(segs):
+    # sanity check the segs: ensure single u or v steps
+    for path in segs:
+        for i in range(len(path) - 1):
+            ij_diff = path[i] - path[i+1]
+            if np.sum(np.abs(ij_diff)) != 1:
+                raise Exception("Line walker error " + str(path[i]) + str(path[i+1]))
+
 
 # TODO: Make sure we can handle >2D cubes (currently fails, I think)
 def find_path(cube, line, debug_ax=None):
     start, end = line
 
-    # top right corners
+    # Make the grid of top-right corners.
     y_coord = cube.coord(axis="Y")
     x_coord = cube.coord(axis="x")
     lat_tr_bounds = y_coord.bounds[..., 2].squeeze()  # TODO: no squeeze
     lon_tr_bounds = x_coord.bounds[..., 2].squeeze()
     shape = lat_tr_bounds.shape
 
-    # put the corners into a kdtree for fast nearest point searching
+    # Put the corners into a kdtree for fast nearest point searching.
     ll_pairs = zip(lon_tr_bounds.flatten(), lat_tr_bounds.flatten())
     kdtree = scipy.spatial.cKDTree(ll_pairs)
 
-    # walk the line
-    min_edge, max_edge = _min_max_edge(lon_tr_bounds, lat_tr_bounds)
-
+    # Walk the line
     # TODO: adaptive step size?
-    # for lataitude = 80
-    # 0.1:    pointwalk 80 [160, 9, 1, 1, 357, 3, 210]
-    # 0.01:   pointwalk 80 [156, 9, 1, 1, 355, 3, 200]
-    # 0.001:  pointwalk 80 [156, 9, 1, 1, 355, 3, 200]
-    # 0.0001: pointwalk 80 [156, 9, 1, 1, 355, 3, 200]
-    step = max(min_edge / 10.0, 0.1)
-
+    min_edge, max_edge = _min_max_edge(lon_tr_bounds, lat_tr_bounds)
+    step = max(min_edge / 10.0, 0.01)
     dist_vect = end - start
     line_len = np.sqrt(np.sum(dist_vect**2))
     num_steps = int(line_len / step)  # TODO: do the full length of the line
-    
-    # List of path tuples
-    segs = [[]]
+    segs = [[]]  # List of path tuples
 
     # Find closest corner points to line
     d = dist_vect / num_steps
@@ -173,60 +174,42 @@ def find_path(cube, line, debug_ax=None):
         
     # walk
     for i in range(num_steps):
+        
         walk_point = start + d*i
-        near_ij, near_dist = _nearest_point(kdtree, walk_point, shape, segs)
-        
-        if np.all(near_ij == [977, 406]):
-#         if i - debug_start == 16:
-            pass
-        
         if debug_ax and debug_start <= i <= debug_end:
             traversed_x[i-debug_start] = walk_point[0]
             traversed_y[i-debug_start] = walk_point[1]
+        
+        # Are we starting a new line?
+        if len(segs[-1]) == 0:
 
-        # Outside the grid?
-        if not np.isfinite(near_dist):
-            continue 
+            # Find the nearest point to the walk-point, using the kdtree.
+            near_ij, near_dist = _nearest_to_point(kdtree, walk_point, shape, segs)
 
-        # Before we add the new point, make sure we're next to it...
-        if len(segs[-1]) > 0:
-
-            # Are we still near the same point as last time?
-            ijdiff = near_ij - segs[-1][-1]
-            if np.all(ijdiff == 0):
+            # Outside the grid?
+            if not np.isfinite(near_dist):
+                warnings.warn("Point outside kdtree")
                 continue
             
-            # Far enough away to start a new segment?
-            if np.all(np.abs(ijdiff) > 2):
-                segs.append([])
+            add_point(segs, near_ij) 
             
-            else:
-                
-                # More than 1 cell away on BOTH i and j?
-                if np.all(np.abs(ijdiff) > 1):
-                    # This should get us within one cell of target i OR j.
-                    mid_ij = segs[-1][-1] + ijdiff/2
-                    go_near(segs, mid_ij)
-                    check_add_opposite(segs, mid_ij, walk_point,
-                                       lon_tr_bounds, lat_tr_bounds)
-                    add_point(segs, mid_ij)
-    
-                # More than one cell away on EITHER i or j?
-                ijdiff = near_ij - segs[-1][-1]
-                if np.any(np.abs(ijdiff) > 1):
-                    # Make sure we're close on t'other dimension.
-                    if not np.abs(ijdiff).min() <= 1:
-                        raise Exception("um...")
-                    # This should get us within one cell of target i AND j.
-                    go_near(segs, near_ij)
-                    
-                # Excatly one cell away on both i and j?
-                check_add_opposite(segs, near_ij, walk_point,
-                                   lon_tr_bounds, lat_tr_bounds)
+        # We are continuging a line.
+        else:
+            
+            # Find the nearest point, from the surrounding 8,
+            # to the direction we're heading in.
+            near_ij = _nearest_to_line(walk_point, shape, segs, lat_tr_bounds, lon_tr_bounds)
         
-        # Now we can add the new point.
-        # We should be certain we're one step away now.
-        add_point(segs, near_ij)
+            if np.all(near_ij == segs[-1][-1]):
+                continue
+            check_add_opposite(segs, near_ij, walk_point,
+                               lon_tr_bounds, lat_tr_bounds)
+            add_point(segs, near_ij)
+
+
+
+
+
 
         if debug_ax and debug_start <= i <= debug_end:
             visited.append((i - debug_start, near_ij))
@@ -235,13 +218,6 @@ def find_path(cube, line, debug_ax=None):
             lon = lon_tr_bounds[near_ij[0], near_ij[1]] 
             print "{} ({:.3f},{:.3f}) : {}".format(i - debug_start, lon, lat,
                                                    seg[-min(10,len(seg)):])
-
-    # sanity check the segs: ensure single u or v steps
-    for path in segs:
-        for i in range(len(path) - 1):
-            ij_diff = path[i] - path[i+1]
-            if np.sum(np.abs(ij_diff)) != 1:
-                raise Exception("Line walker error " + str(path[i]) + str(path[i+1]))
 
     if debug_ax:
         debug_ax.plot(traversed_x, traversed_y, "b.")
@@ -252,4 +228,7 @@ def find_path(cube, line, debug_ax=None):
             lon = lon_tr_bounds[ij[0], ij[1]] 
             debug_ax.text(lon, lat, "{}: {},{}".format(i, ij[0], ij[1]), size="x-small")
 
+
+
+    sanity_check_all_points(segs)
     return segs
