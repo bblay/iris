@@ -292,6 +292,10 @@ if _lib_ud is None:
     _ut_scale.argtypes = [ctypes.c_double, ctypes.c_void_p]
     _ut_scale.restype = ctypes.c_void_p
 
+    _ut_compare = _lib_ud.ut_compare
+    _ut_compare.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    _ut_compare.restype = ctypes.c_int
+
     # convenience dictionary for the Unit convert method
     _cv_convert_scalar = {FLOAT32: _cv_convert_float,
                           FLOAT64: _cv_convert_double}
@@ -1230,6 +1234,7 @@ class Unit(iris.util._OrderedHashable):
             'watt'
 
         """
+
         return self.format(UT_NAMES)
 
     @property
@@ -1673,6 +1678,17 @@ class Unit(iris.util._OrderedHashable):
 
         """
         other = as_unit(other)
+
+#         if self.ut_unit is None and other.ut_unit is None:
+#             return True
+#          if self.ut_unit is None or other.ut_unit is None:
+#              return False
+
+        res = _ut_compare(self.ut_unit, other.ut_unit)
+        if res == 0:
+            return True
+        else:
+            return False
         return iris.util._OrderedHashable.__eq__(self, as_unit(other))
 
     def __ne__(self, other):
