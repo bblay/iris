@@ -783,8 +783,8 @@ def load_cubes(filenames, user_callback, loader):
 
     for filename in filenames:
         for field in loader.field_generator(filename, **loader.field_generator_kwargs):
-            # Convert the field to a Cube.
-            cube, factories, references = _make_cube(field, loader.converter)
+            # Convert the field to Cube creation params.
+            cube_params, factories, references = _make_cube(field, loader.converter)
 
             # Run any custom user-provided rules.
             if loader.legacy_custom_rules:

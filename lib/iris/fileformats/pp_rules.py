@@ -42,13 +42,21 @@ def convert(f):
     cell_methods = []
     dim_coords_and_dims = []
     aux_coords_and_dims = []
+    
+    class DimCoordParams(namedtuple('DimThing', ['points', 'standard_name', 'long_name', 'var_name', 'units', 'bounds', 'attributes', 'coord_system', 'circular'])):
+        pass
+    class Date2NumParams(namedtuple('Date2NumParams', ['unit', 'calendar', 'date'])):
+        pass
+    class UnitParams(namedtuple('UnitParams', ['name', 'calendar'])):
+            def __new__(cls, name, calendar=None):
+                return super(UnitParams, cls).__new__(cls, name, calendar)
 
     if \
             (f.lbtim.ia == 0) and \
             (f.lbtim.ib == 0) and \
             (f.lbtim.ic in [1, 2, 3]) and \
             (len(f.lbcode) != 5 or (len(f.lbcode) == 5 and f.lbcode.ix not in [20, 21, 22, 23] and f.lbcode.iy not in [20, 21, 22, 23])):
-        aux_coords_and_dims.append((DimCoord(f.time_unit('hours').date2num(f.t1), standard_name='time', units=f.time_unit('hours')), None))
+        aux_coords_and_dims.append((DimCoordParams(Date2NumParams("hours", f.calendar, f.t1), standard_name='time', units=UnitParams('hours')), None))
 
     if \
             (f.lbtim.ia == 0) and \
