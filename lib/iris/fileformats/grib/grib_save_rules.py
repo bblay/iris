@@ -561,6 +561,10 @@ def run(cube, grib):
 
     gribbability_check(cube)
     
+    # Use tables version 7 (May 2011), as found in api 1.9.16 (May 2012).
+    # The default GRIB2 template uses version 4 (Nov 2007).
+    gribapi.grib_set_long(grib, "tablesVersion", 7)
+    
     identification(cube, grib)
     grid_template(cube, grib)
     product_template(cube, grib)
