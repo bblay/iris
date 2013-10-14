@@ -184,7 +184,37 @@ class TestDescribeDiff(iris.tests.IrisTest):
         iris.util.describe_diff(test_cube_a, test_cube_b, output_file=return_str_IO)
         return_str = return_str_IO.getvalue()
 
-        self.assertString(return_str, 'compatible_cubes.str.txt')
+        self.assertString(return_str,
+            ['util', 'describe_diff', 'compatible_cubes.str.txt'])
+
+    def test_array_attributes(self):
+        base_testcube = iris.cube.Cube([])
+        cube_a = base_testcube.copy()
+        cube_b = base_testcube.copy()
+
+        # test non-common array attribute
+        cube_a.attributes['test_array'] = np.array([1, 2, 3])
+        return_str_IO = StringIO.StringIO()
+        iris.util.describe_diff(cube_a, cube_b, output_file=return_str_IO)
+        return_str = return_str_IO.getvalue()
+        self.assertString(return_str,
+            ['util', 'describe_diff', 'compatible_cubes.str.txt'])
+
+        # test matching array attribute
+        cube_b.attributes['test_array'] = np.array([1, 2, 3])
+        return_str_IO = StringIO.StringIO()
+        iris.util.describe_diff(cube_a, cube_b, output_file=return_str_IO)
+        return_str = return_str_IO.getvalue()
+        self.assertString(return_str,
+            ['util', 'describe_diff', 'compatible_cubes.str.txt'])
+
+        # test non-matching array attribute
+        cube_b.attributes['test_array'][1] = 7
+        return_str_IO = StringIO.StringIO()
+        iris.util.describe_diff(cube_a, cube_b, output_file=return_str_IO)
+        return_str = return_str_IO.getvalue()
+        self.assertString(return_str,
+            ['util', 'describe_diff', 'incompatible_arrays.str.txt'])
 
     def test_different(self):
         return_str_IO = StringIO.StringIO()
@@ -199,7 +229,8 @@ class TestDescribeDiff(iris.tests.IrisTest):
         iris.util.describe_diff(test_cube_a, test_cube_b, output_file=return_str_IO)
         return_str = return_str_IO.getvalue()
         
-        self.assertString(return_str, 'incompatible_attr.str.txt')
+        self.assertString(return_str,
+            ['util', 'describe_diff', 'incompatible_attr.str.txt'])
         
         # test incompatible names
         test_cube_a = stock.realistic_4d()
@@ -211,7 +242,8 @@ class TestDescribeDiff(iris.tests.IrisTest):
         iris.util.describe_diff(test_cube_a, test_cube_b, output_file=return_str_IO)
         return_str = return_str_IO.getvalue()
 
-        self.assertString(return_str, 'incompatible_name.str.txt')
+        self.assertString(return_str,
+            ['util', 'describe_diff', 'incompatible_name.str.txt'])
 
         # test incompatible unit
         test_cube_a = stock.realistic_4d()
@@ -223,7 +255,8 @@ class TestDescribeDiff(iris.tests.IrisTest):
         iris.util.describe_diff(test_cube_a, test_cube_b, output_file=return_str_IO)
         return_str = return_str_IO.getvalue()
         
-        self.assertString(return_str, 'incompatible_unit.str.txt')
+        self.assertString(return_str,
+            ['util', 'describe_diff', 'incompatible_unit.str.txt'])
         
         # test incompatible methods
         test_cube_a = stock.realistic_4d()
@@ -233,7 +266,8 @@ class TestDescribeDiff(iris.tests.IrisTest):
         iris.util.describe_diff(test_cube_a, test_cube_b, output_file=return_str_IO)
         return_str = return_str_IO.getvalue()
 
-        self.assertString(return_str, 'incompatible_meth.str.txt')
+        self.assertString(return_str,
+            ['util', 'describe_diff', 'incompatible_meth.str.txt'])
 
     def test_output_file(self):
         # test incompatible attributes
@@ -251,7 +285,7 @@ class TestDescribeDiff(iris.tests.IrisTest):
                 f.close()
 
             self.assertFilesEqual(filename,
-                              'incompatible_cubes.str.txt')
+                ['util', 'describe_diff', 'incompatible_cubes.str.txt'])
 
 
 class TestAsCompatibleShape(tests.IrisTest):

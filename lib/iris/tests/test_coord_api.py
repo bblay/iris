@@ -802,6 +802,11 @@ class TestCoordCompatibility(tests.IrisTest):
         self.aux_coord.attributes['source']= 'bob'
         r.attributes['source'] = 'alice'
         self.assertFalse(self.aux_coord.is_compatible(r))
+        # Different array attributes.
+        self.aux_coord.attributes['array_test'] = np.array([1,2,3])
+        r = self.aux_coord.copy()
+        r.attributes['array_test'][1] = 7
+        self.assertFalse(self.aux_coord.is_compatible(r))
 
     def test_compatible(self):
         # The following changes should not affect compatibility.
@@ -809,6 +814,12 @@ class TestCoordCompatibility(tests.IrisTest):
         r = self.aux_coord.copy()
         self.aux_coord.attributes['source']= 'bob'
         r.attributes['origin'] = 'alice'
+        self.assertTrue(self.aux_coord.is_compatible(r))
+        # Non-common array attributes.
+        self.aux_coord.attributes['array_test'] = np.array([1,2,3])
+        self.assertTrue(self.aux_coord.is_compatible(r))
+        # Matching array attributes.
+        r.attributes['array_test'] = self.aux_coord.attributes['array_test']
         self.assertTrue(self.aux_coord.is_compatible(r))
         # Different points.
         r.points = np.zeros(r.points.shape)

@@ -852,6 +852,11 @@ class TestCubeEquality(TestCube2d):
         self.t.attributes['source']= 'bob'
         r.attributes['source'] = 'alice'
         self.assertFalse(self.t.is_compatible(r))
+        # Different array attributes.
+        self.t.attributes['array_test'] = np.array([1,2,3])
+        r = self.t.copy()
+        r.attributes['array_test'][1] = 7
+        self.assertFalse(self.t.is_compatible(r))
 
     def test_compatible(self):
         r = self.t.copy()
@@ -861,6 +866,11 @@ class TestCubeEquality(TestCube2d):
         self.t.attributes['source']= 'bob'
         r.attributes['origin'] = 'alice'
         self.assertTrue(self.t.is_compatible(r))
+        # Non-common array attributes.
+        self.t.attributes['array_test'] = np.array([1,2,3])
+        self.assertTrue(self.t.is_compatible(r))
+        # Matching array attributes.
+        r.attributes['array_test'] = np.array([1,2,3])
         # Different coordinates.
         r.remove_coord('dim1')
         self.assertTrue(self.t.is_compatible(r))
