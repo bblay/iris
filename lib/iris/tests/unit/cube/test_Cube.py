@@ -25,6 +25,7 @@ import numpy as np
 
 import iris
 from iris.analysis import WeightedAggregator, Aggregator
+from iris.cube import Cube
 
 
 class Test_xml(tests.IrisTest):
@@ -32,7 +33,7 @@ class Test_xml(tests.IrisTest):
         # Mask out an single element.
         data = np.ma.arange(12).reshape(3, 4)
         data[1, 2] = np.ma.masked
-        cube = iris.cube.Cube(data)
+        cube = Cube(data)
         self.assertCML(cube, ('unit', 'cube', 'Cube', 'xml', 'mask.cml'))
 
         # If we change the underlying value before masking it, the
@@ -40,7 +41,7 @@ class Test_xml(tests.IrisTest):
         data = np.ma.arange(12).reshape(3, 4)
         data[1, 2] = 42
         data[1, 2] = np.ma.masked
-        cube = iris.cube.Cube(data)
+        cube = Cube(data)
         self.assertCML(cube, ('unit', 'cube', 'Cube', 'xml', 'mask.cml'))
 
 
@@ -138,6 +139,29 @@ class Test_collapsed__warning(tests.IrisTest):
             self.cube.collapsed(coords, aggregator)
 
         self._assert_nowarn_collapse_without_weight(coords, warn)
+
+
+class Test_is_compatible(tests.IrisTest):
+    def setUp(self):
+        self.test_cube = Cube([1.])
+        self.other_cube = self.test_cube.copy()
+
+    def test_noncommon_array_attrs_compatible(self):
+        # Non-common array attributes should be ok.
+        self.test_cube.attributes['array_test'] = np.array([1.0, 2, 3])
+        self.assertTrue(self.test_cube.is_compatible(self.other_cube))
+
+    def test_matching_array_attrs_compatible(self):
+        # Matching array attributes should be ok.
+        self.test_cube.attributes['array_test'] = np.array([1.0, 2, 3])
+        self.other_cube.attributes['array_test'] = np.array([1.0, 2, 3])
+        self.assertTrue(self.test_cube.is_compatible(self.other_cube))
+
+    def test_different_array_attrs_incompatible(self):
+        # Differing array attributes should make the cubes incompatible.
+        self.test_cube.attributes['array_test'] = np.array([1.0, 2, 3])
+        self.other_cube.attributes['array_test'] = np.array([1.0, 2, 777.7])
+        self.assertFalse(self.test_cube.is_compatible(self.other_cube))
 
 
 if __name__ == "__main__":
