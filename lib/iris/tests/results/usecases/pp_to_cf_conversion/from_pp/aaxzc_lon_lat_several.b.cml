@@ -7,9 +7,10 @@
     </attributes>
     <coords>
       <coord datadims="[0]">
-        <dimCoord id="73141289" points="[866880, 867600, 868320, 869040, 869760, 870480,
-		871200, 871920, 872640, 873360, 874080, 874800,
-		875520, 876240]" shape="(14,)" standard_name="forecast_period" units="Unit('hours')" value_type="int32"/>
+        <dimCoord id="73141289" points="[866520.0, 867240.0, 867960.0, 868680.0,
+		869400.0, 870120.0, 870840.0, 871560.0,
+		872280.0, 873000.0, 873720.0, 874440.0,
+		875160.0, 875880.0]" shape="(14,)" standard_name="forecast_period" units="Unit('hours')" value_type="float64"/>
       </coord>
       <coord>
         <dimCoord id="88312288" points="[187200.0]" shape="(1,)" standard_name="forecast_reference_time" units="Unit('hours since 1970-01-01 00:00:00', calendar='360_day')" value_type="float64"/>

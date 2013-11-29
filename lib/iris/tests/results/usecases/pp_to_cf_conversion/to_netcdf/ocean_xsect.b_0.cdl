@@ -27,7 +27,7 @@ variables:
 		latitude:axis = "Y" ;
 		latitude:units = "degrees_north" ;
 		latitude:standard_name = "latitude" ;
-	int forecast_period ;
+	double forecast_period ;
 		forecast_period:units = "hours" ;
 		forecast_period:standard_name = "forecast_period" ;
 	double forecast_reference_time ;
