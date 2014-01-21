@@ -1,4 +1,4 @@
-# (C) British Crown Copyright 2010 - 2013, Met Office
+# (C) British Crown Copyright 2010 - 2014, Met Office
 #
 # This file is part of Iris.
 #
@@ -182,7 +182,7 @@ class GribWrapper(object):
         # handle missing values in a sensible way
         mask = np.isnan(self.data)
         if mask.any():
-            self.data = ma.array(self.data, mask=mask)
+            self.data = ma.array(self.data, mask=mask, fill_value=np.nan)
 
     def _confirm_in_scope(self):
         """Ensure we have a grib flavour that we choose to support."""
