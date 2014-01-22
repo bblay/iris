@@ -125,6 +125,7 @@ install:
   - ./.travis_no_output /usr/bin/python setup.py pyke_rules
 
 script:
+  - python -c "import numpy as np; print(np.__version__)"
   - /usr/bin/python setup.py test --example-tests
 
   - cd $(pwd)/docs/iris
