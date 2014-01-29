@@ -589,10 +589,14 @@ def identification(cube, grib):
 def data(cube, grib):
     # mdi
     if isinstance(cube.data, ma.core.MaskedArray):
+        if str(cube.data.fill_value) != "nan":
+            fill_value = float(cube.data.fill_value)
+        else:
+            min, max = cube.data.min(), cube.data.max()
+            fill_value = min - (max - min) * 0.1 
         gribapi.grib_set(grib, "bitmapPresent", 1)
-        gribapi.grib_set_double(grib, "missingValue",
-                                float(cube.data.fill_value))
-        data = cube.data.filled()
+        gribapi.grib_set_double(grib, "missingValue", fill_value)
+        data = cube.data.filled(fill_value)
     else:
         gribapi.grib_set_double(grib, "missingValue", float(-1e9))
         data = cube.data
