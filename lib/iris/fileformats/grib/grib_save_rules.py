@@ -587,18 +587,27 @@ def identification(cube, grib):
 
 
 def data(cube, grib):
-    # mdi
+    # Masked data?
     if isinstance(cube.data, ma.core.MaskedArray):
-        if str(cube.data.fill_value) != "nan":
+        # What missing value shall we use?
+        if not np.isnan(cube.data.fill_value):
+            # Use the data's fill value.
             fill_value = float(cube.data.fill_value)
         else:
+            # We can't use the data's fill value if it's nan,
+            # the GRIB API doesn't like it.
+            # Calculate an MDI outside the data range.
             min, max = cube.data.min(), cube.data.max()
-            fill_value = min - (max - min) * 0.1 
+            fill_value = min - (max - min) * 0.1
+        # Enable missing values in the grib message.
         gribapi.grib_set(grib, "bitmapPresent", 1)
         gribapi.grib_set_double(grib, "missingValue", fill_value)
+        # Prepare the unmaksed data array, using fill_value as the MDI.
         data = cube.data.filled(fill_value)
     else:
+        # Disable missing values in the grib message.
         gribapi.grib_set_double(grib, "missingValue", float(-1e9))
+        gribapi.grib_set(grib, "bitmapPresent", 0)
         data = cube.data
 
     # units scaling
