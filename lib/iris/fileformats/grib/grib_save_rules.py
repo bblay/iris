@@ -606,7 +606,7 @@ def data(cube, grib):
         data = cube.data.filled(fill_value)
     else:
         # Disable missing values in the grib message.
-        gribapi.grib_set_double(grib, "missingValue", float(-1e9))
+        gribapi.grib_set_double(grib, "missingValue", float(-1e20))
         gribapi.grib_set(grib, "bitmapPresent", 0)
         data = cube.data
 
